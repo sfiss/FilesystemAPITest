@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="description" content="TestApp" />
+
+    <script>
+        if (location.protocol !== "https:") {
+            location.protocol = "https:";
+        }
+
+        const CUTOFF_INCL = 2
+
+        async function list(name, handle, level, cutoff) {
+            if (level > cutoff)
+                return;
+
+            console.log("  ".repeat(level) + name);
+
+            switch (handle.kind) {
+                case "directory":
+                    for await (let [nameS, handleS] of handle.entries()) {
+                        await list(nameS, handleS, level + 1, cutoff);
+                    }
+            }
+        }
+
+        async function choose() {
+            let dir = await showDirectoryPicker();
+            await list(dir.name, dir, 0, CUTOFF_INCL);
+        };
+
+        async function dropHandler(ev) {
+            ev.preventDefault();
+
+            const fileHandlesPromises = [...ev.dataTransfer.items]
+                .filter(item => item.kind === 'file')
+                .map(item => item.getAsFileSystemHandle());
+
+            for await (const handle of fileHandlesPromises) {
+                await list(handle.name, handle, 0, CUTOFF_INCL);
+                console.log('Accessing forbidden dir');
+                await accessForbidden(handle);
+            }
+        }
+
+
+        async function dragOverHandler(ev) {
+            ev.preventDefault();
+        }
+
+        async function fileSelected(ev) {
+            var files = document.getElementById('fileinput').files;
+            var filesArray = Array.from(files);
+            for (const handle of filesArray) {
+                console.log(handle);
+            }
+        }
+
+        async function accessForbidden(dir) {
+            // try to access forbidden stuff
+            let forbidden = await dir.getDirectoryHandle('Downloads');
+            if(!!forbidden)
+                await list(forbidden.name, forbidden, 0, CUTOFF_INCL);
+            else 
+                console.log("No forbidden dir");
+        }
+    </script>
+
+
+    <title>TestApp</title>
+
+    <link rel="apple-touch-icon" href="icon.png">
+    <meta name="apple-mobile-web-app-status-bar" content="#F4F4F4">
+    <meta name="theme-color" content="#F4F4F4">
+</head>
+
+<body>
+    <main>
+        <h1>FilesystemTest</h1>
+
+        <button onclick="choose()">Test</button>
+
+        <br />
+
+        <div id="drop_zone" style="border: 5px solid blue;        width:  200px;        height: 100px;"
+            ondrop="dropHandler(event);" ondragover="dragOverHandler(event);">
+            <p>Drag one or more files to this Drop Zone ...</p>
+        </div>
+
+        <br />
+
+        <input id="fileinput" type="file" webkitdirectory onchange="fileSelected(event)">
+    </main>
+</body>
+
+</html>
