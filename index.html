@@ -15,8 +15,8 @@
         const CUTOFF_INCL = 2
 
         async function list(name, handle, level, cutoff) {
-            if(Array.isArray(handle)) {
-                for(let h of handle) {
+            if (Array.isArray(handle)) {
+                for (let h of handle) {
                     list(h.name, h, level, cutoff);
                 }
                 return;
@@ -25,7 +25,10 @@
             if (level > cutoff)
                 return;
 
-            console.log("  ".repeat(level) + name);
+            let status = await handle.queryPermission();
+            let statusR = await handle.queryPermission({ mode: "read" });
+            let statusRW = await handle.queryPermission({ mode: "readwrite" });
+            console.log("  ".repeat(level) + name + `(status: ${status}, read: ${statusR}, write: ${statusRW})`);
 
             switch (handle.kind) {
                 case "directory":
@@ -37,6 +40,13 @@
 
         async function chooseDirectory() {
             let dir = await showDirectoryPicker();
+            await list(dir.name, dir, 0, CUTOFF_INCL);
+        };
+
+        async function chooseDirectoryWrite() {
+            let dir = await showDirectoryPicker({ mode: "readwrite" });
+            let status = await handle.requestPermission({ mode: "readwrite" })
+            console.log(status);
             await list(dir.name, dir, 0, CUTOFF_INCL);
         };
 
@@ -59,11 +69,32 @@
 
             for await (const handle of fileHandlesPromises) {
                 await list(handle.name, handle, 0, CUTOFF_INCL);
-                console.log('Accessing forbidden dir');
+            }
+        }
+
+        async function dropHandlerForbidden(ev) {
+            ev.preventDefault();
+
+            const fileHandlesPromises = [...ev.dataTransfer.items]
+                .filter(item => item.kind === 'file')
+                .map(item => item.getAsFileSystemHandle());
+
+            for await (const handle of fileHandlesPromises) {
                 await accessForbidden(handle);
             }
         }
 
+        async function dropHandlerMissing(ev) {
+            ev.preventDefault();
+
+            const fileHandlesPromises = [...ev.dataTransfer.items]
+                .filter(item => item.kind === 'file')
+                .map(item => item.getAsFileSystemHandle());
+
+            for await (const handle of fileHandlesPromises) {
+                await accessMissing(handle);
+            }
+        }
 
         async function dragOverHandler(ev) {
             ev.preventDefault();
@@ -77,12 +108,21 @@
             }
         }
 
+        async function accessMissing(dir) {
+            // try to access forbidden stuff
+            let forbidden = await dir.getDirectoryHandle('Missing');
+            if (!!forbidden)
+                await list(forbidden.name, forbidden, 0, CUTOFF_INCL);
+            else
+                console.log("No forbidden dir");
+        }
+
         async function accessForbidden(dir) {
             // try to access forbidden stuff
             let forbidden = await dir.getDirectoryHandle('Downloads');
-            if(!!forbidden)
+            if (!!forbidden)
                 await list(forbidden.name, forbidden, 0, CUTOFF_INCL);
-            else 
+            else
                 console.log("No forbidden dir");
         }
     </script>
@@ -103,6 +143,11 @@
 
         <br />
 
+        <button onclick="chooseDirectoryWrite()">chooseDirectoryWrite</button>
+
+        <br />
+
+
         <button onclick="chooseOpenFile()">chooseOpenFile</button>
 
         <br />
@@ -114,6 +159,20 @@
         <div id="drop_zone" style="border: 5px solid blue;        width:  200px;        height: 100px;"
             ondrop="dropHandler(event);" ondragover="dragOverHandler(event);">
             <p>Drag one or more files to this Drop Zone ...</p>
+        </div>
+
+        <br />
+
+        <div id="drop_zone_forbidden" style="border: 5px solid blue;        width:  200px;        height: 100px;"
+            ondrop="dropHandlerForbidden(event);" ondragover="dragOverHandler(event);">
+            <p>Directory with "Downloads" subdirectory</p>
+        </div>
+
+        <br />
+
+        <div id="drop_zone_missing" style="border: 5px solid blue;        width:  200px;        height: 100px;"
+            ondrop="dropHandlerMissing(event);" ondragover="dragOverHandler(event);">
+            <p>Directory without "Missing" subdirectory</p>
         </div>
 
         <br />
