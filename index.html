@@ -28,8 +28,18 @@
             }
         }
 
-        async function choose() {
+        async function chooseDirectory() {
             let dir = await showDirectoryPicker();
+            await list(dir.name, dir, 0, CUTOFF_INCL);
+        };
+
+        async function chooseOpenFile() {
+            let dir = await showOpenFilePicker();
+            await list(dir.name, dir, 0, CUTOFF_INCL);
+        };
+
+        async function chooseSaveFile() {
+            let dir = await showSaveFilePicker();
             await list(dir.name, dir, 0, CUTOFF_INCL);
         };
 
@@ -82,7 +92,15 @@
     <main>
         <h1>FilesystemTest</h1>
 
-        <button onclick="choose()">Test</button>
+        <button onclick="chooseDirectory()">chooseDirectory</button>
+
+        <br />
+
+        <button onclick="chooseOpenFile()">chooseOpenFile</button>
+
+        <br />
+
+        <button onclick="chooseSaveFile()">chooseSaveFile</button>
 
         <br />
 
