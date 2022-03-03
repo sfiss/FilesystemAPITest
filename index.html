@@ -12,7 +12,7 @@
             location.protocol = "https:";
         }
 
-        const CUTOFF_INCL = 2
+        const CUTOFF_INCL = 1
 
         async function list(name, handle, level, cutoff) {
             if (Array.isArray(handle)) {
@@ -44,8 +44,8 @@
         };
 
         async function chooseDirectoryWrite() {
-            let dir = await showDirectoryPicker({ mode: "readwrite" });
-            let status = await handle.requestPermission({ mode: "readwrite" })
+            let dir = await showDirectoryPicker({ mode: 'readwrite' });
+            let status = await dir.requestPermission({ mode: 'readwrite' });
             console.log(status);
             await list(dir.name, dir, 0, CUTOFF_INCL);
         };
