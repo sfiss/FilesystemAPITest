@@ -125,6 +125,46 @@
             else
                 console.log("No forbidden dir");
         }
+
+        async function chooseDirectoryAndRemove() {
+            let dir = await showDirectoryPicker({ mode: 'readwrite' });
+            let status = await dir.requestPermission({ mode: 'readwrite' });
+            console.log(status);
+            await list(dir.name, dir, 0, CUTOFF_INCL);
+            console.log('Removing...')
+            await dir.remove({ recursive: true });
+        };
+
+        async function chooseDirectoryAndRenameToTest2() {
+            let dir = await showDirectoryPicker({ mode: 'readwrite' });
+            let status = await dir.requestPermission({ mode: 'readwrite' });
+            console.log(status);
+            await list(dir.name, dir, 0, CUTOFF_INCL);
+            console.log('Renaming...')
+            await dir.move('Test2');
+        };
+
+        async function chooseDirectoryAndRemoveSubdirTest() {
+            let dir = await showDirectoryPicker({ mode: 'readwrite' });
+            let status = await dir.requestPermission({ mode: 'readwrite' });
+            console.log(status);
+            await list(dir.name, dir, 0, CUTOFF_INCL);
+            console.log('Removing subdir...')
+            await dir.removeEntry('Test', { recursive: true });
+            await list(dir.name, dir, 0, CUTOFF_INCL);
+        };
+
+        async function chooseDirectoryAndCreateSubdirTest() {
+            let dir = await showDirectoryPicker({ mode: 'readwrite' });
+            let status = await dir.requestPermission({ mode: 'readwrite' });
+            console.log(status);
+            await list(dir.name, dir, 0, CUTOFF_INCL);
+            console.log('Creating subdir...')
+            const created = await dir.getDirectoryHandle('Test', {
+                create: true,
+            });
+            await list(created.name, created, 0, CUTOFF_INCL);
+        };
     </script>
 
 
@@ -174,6 +214,22 @@
             ondrop="dropHandlerMissing(event);" ondragover="dragOverHandler(event);">
             <p>Directory without "Missing" subdirectory</p>
         </div>
+
+        <br />
+
+        <button onclick="chooseDirectoryAndRemove()">chooseDirectoryAndRemove</button>
+
+        <br />
+
+        <button onclick="chooseDirectoryAndRenameToTest2()">chooseDirectoryAndRenameToTest2</button>
+
+        <br />
+
+        <button onclick="chooseDirectoryAndCreateSubdirTest()">chooseDirectoryAndCreateSubdirTest</button>
+
+        <br />
+
+        <button onclick="chooseDirectoryAndRemoveSubdirTest()">chooseDirectoryAndRemoveSubdirTest</button>
 
         <br />
 
